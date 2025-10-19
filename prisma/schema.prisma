@@ -1,0 +1,422 @@
+// SiteNinja Backend - Prisma Schema
+// Version: 1.0
+// Database: PostgreSQL 15+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// CORE TABLES
+// ==========================================
+
+model Tenant {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @unique @map("tenant_id") @db.VarChar(255)
+  name            String    @db.VarChar(255)
+  subdomain       String?   @unique @db.VarChar(255)
+  customDomain    String?   @unique @map("custom_domain") @db.VarChar(255)
+  businessName    String    @map("business_name") @db.VarChar(255)
+  businessType    String?   @map("business_type") @db.VarChar(100)
+  description     String?   @db.Text
+  contactPhone    String?   @map("contact_phone") @db.VarChar(50)
+  contactEmail    String?   @map("contact_email") @db.VarChar(255)
+  businessHours   Json?     @map("business_hours") @db.JsonB
+  status          String    @default("active") @db.VarChar(50)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  branding      Branding?
+  pages         Page[]
+  navigation    Navigation[]
+  users         User[]
+  subscription  Subscription?
+  assets        Asset[]
+  auditLogs     AuditLog[]
+  webhooks      Webhook[]
+  apiKeys       ApiKey[]
+  domainLookups DomainLookup[]
+
+  @@index([tenantId])
+  @@index([subdomain])
+  @@index([customDomain])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("tenants")
+}
+
+model Branding {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tenantId            String   @unique @map("tenant_id") @db.Uuid
+  primaryColor        String   @default("#1D4ED8") @map("primary_color") @db.VarChar(20)
+  secondaryColor      String   @default("#3B82F6") @map("secondary_color") @db.VarChar(20)
+  accentColor         String   @default("#F59E0B") @map("accent_color") @db.VarChar(20)
+  backgroundColor     String   @default("#FFFFFF") @map("background_color") @db.VarChar(20)
+  textColor           String   @default("#374151") @map("text_color") @db.VarChar(20)
+  fontFamily          String   @default("Inter, sans-serif") @map("font_family") @db.VarChar(255)
+  headingFontFamily   String   @default("Inter, sans-serif") @map("heading_font_family") @db.VarChar(255)
+  logoUrl             String?  @map("logo_url") @db.Text
+  faviconUrl          String?  @map("favicon_url") @db.Text
+  darkLogoUrl         String?  @map("dark_logo_url") @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("branding")
+}
+
+model Page {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  slug      String    @db.VarChar(255)
+  title     String    @db.VarChar(500)
+  status    String    @default("published") @db.VarChar(50)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections     Section[]
+  seoMetadata  SeoMetadata?
+  navigation   Navigation?
+  pageTemplate PageTemplate?
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([slug])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("pages")
+}
+
+model Section {
+  id        String   @id @default(uuid()) @db.Uuid
+  pageId    String   @map("page_id") @db.Uuid
+  sectionId String   @map("section_id") @db.VarChar(255)
+  type      String   @db.VarChar(100)
+  content   Json     @db.JsonB
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([type])
+  @@index([sortOrder])
+  @@map("sections")
+}
+
+model Navigation {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  pageId    String?  @unique @map("page_id") @db.Uuid
+  title     String   @db.VarChar(255)
+  slug      String   @db.VarChar(255)
+  sortOrder Int      @default(0) @map("sort_order")
+  isVisible Boolean  @default(true) @map("is_visible")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  page   Page?  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([pageId])
+  @@index([sortOrder])
+  @@index([isVisible])
+  @@map("navigation")
+}
+
+model SeoMetadata {
+  id              String   @id @default(uuid()) @db.Uuid
+  pageId          String   @unique @map("page_id") @db.Uuid
+  metaTitle       String?  @map("meta_title") @db.VarChar(255)
+  metaDescription String?  @map("meta_description") @db.Text
+  keywords        String?  @db.Text
+  ogTitle         String?  @map("og_title") @db.VarChar(255)
+  ogDescription   String?  @map("og_description") @db.Text
+  ogImage         String?  @map("og_image") @db.Text
+  ogType          String   @default("website") @map("og_type") @db.VarChar(50)
+  twitterCard     String   @default("summary_large_image") @map("twitter_card") @db.VarChar(50)
+  schemaMarkup    Json?    @map("schema_markup") @db.JsonB
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@map("seo_metadata")
+}
+
+// ==========================================
+// SUPPORTING TABLES
+// ==========================================
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String?   @map("tenant_id") @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String?   @map("password_hash") @db.VarChar(255)
+  firstName     String?   @map("first_name") @db.VarChar(100)
+  lastName      String?   @map("last_name") @db.VarChar(100)
+  role          String    @default("owner") @db.VarChar(50)
+  status        String    @default("active") @db.VarChar(50)
+  lastLogin     DateTime? @map("last_login")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant           Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assets           Asset[]
+  auditLogs        AuditLog[]
+  createdTemplates Template[]
+  createdApiKeys   ApiKey[]
+
+  @@index([email])
+  @@index([tenantId])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model Subscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tenantId             String    @unique @map("tenant_id") @db.Uuid
+  stripeSubscriptionId String?   @unique @map("stripe_subscription_id") @db.VarChar(255)
+  stripeCustomerId     String?   @map("stripe_customer_id") @db.VarChar(255)
+  plan                 String    @db.VarChar(50)
+  status               String    @default("active") @db.VarChar(50)
+  currentPeriodStart   DateTime? @map("current_period_start")
+  currentPeriodEnd     DateTime? @map("current_period_end")
+  cancelAt             DateTime? @map("cancel_at")
+  canceledAt           DateTime? @map("canceled_at")
+  trialStart           DateTime? @map("trial_start")
+  trialEnd             DateTime? @map("trial_end")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([plan])
+  @@map("subscriptions")
+}
+
+model Asset {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  filename   String   @db.VarChar(500)
+  storageKey String   @map("storage_key") @db.VarChar(500)
+  mimeType   String?  @map("mime_type") @db.VarChar(100)
+  sizeBytes  BigInt?  @map("size_bytes")
+  width      Int?
+  height     Int?
+  altText    String?  @map("alt_text") @db.Text
+  uploadedBy String?  @map("uploaded_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [uploadedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([storageKey])
+  @@index([mimeType])
+  @@index([uploadedBy])
+  @@map("assets")
+}
+
+model Template {
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String    @db.VarChar(255)
+  description     String?   @db.Text
+  category        String    @db.VarChar(100)
+  industry        String?   @db.VarChar(100)
+  previewImage    String?   @map("preview_image") @db.Text
+  isPremium       Boolean   @default(false) @map("is_premium")
+  isActive        Boolean   @default(true) @map("is_active")
+  defaultBranding Json      @map("default_branding") @db.JsonB
+  defaultSections Json      @map("default_sections") @db.JsonB
+  sortOrder       Int       @default(0) @map("sort_order")
+  createdBy       String?   @map("created_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  creator       User?          @relation(fields: [createdBy], references: [id])
+  pageTemplates PageTemplate[]
+
+  @@index([category])
+  @@index([industry])
+  @@index([isActive])
+  @@map("templates")
+}
+
+model PageTemplate {
+  id             String   @id @default(uuid()) @db.Uuid
+  pageId         String   @unique @map("page_id") @db.Uuid
+  templateId     String   @map("template_id") @db.Uuid
+  customizations Json?    @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  page     Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([templateId])
+  @@map("page_templates")
+}
+
+model Industry {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(255)
+  description String?  @db.Text
+  icon        String?  @db.VarChar(100)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([isActive])
+  @@map("industries")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  tenantId     String?  @map("tenant_id") @db.Uuid
+  action       String   @db.VarChar(255)
+  resourceType String?  @map("resource_type") @db.VarChar(100)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  oldValue     Json?    @map("old_value") @db.JsonB
+  newValue     Json?    @map("new_value") @db.JsonB
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent") @db.Text
+  metadata     Json?    @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user   User?   @relation(fields: [userId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model Webhook {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  url             String    @db.Text
+  events          String[]
+  secret          String    @db.VarChar(255)
+  isActive        Boolean   @default(true) @map("is_active")
+  lastTriggeredAt DateTime? @map("last_triggered_at")
+  lastStatusCode  Int?      @map("last_status_code")
+  failureCount    Int       @default(0) @map("failure_count")
+  maxFailures     Int       @default(5) @map("max_failures")
+  retryBackoff    Int       @default(60) @map("retry_backoff")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id             String   @id @default(uuid()) @db.Uuid
+  webhookId      String   @map("webhook_id") @db.Uuid
+  eventType      String   @map("event_type") @db.VarChar(255)
+  payload        Json     @db.JsonB
+  responseStatus Int?     @map("response_status")
+  responseBody   String?  @map("response_body") @db.Text
+  errorMessage   String?  @map("error_message") @db.Text
+  durationMs     Int?     @map("duration_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([createdAt(sort: Desc)])
+  @@map("webhook_deliveries")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  keyHash     String    @unique @map("key_hash") @db.VarChar(255)
+  keyPrefix   String    @map("key_prefix") @db.VarChar(20)
+  permissions String[]  @default([])
+  rateLimit   Int       @default(1000) @map("rate_limit")
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdBy   String?   @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator User?         @relation(fields: [createdBy], references: [id])
+  usage   ApiKeyUsage[]
+
+  @@index([tenantId])
+  @@index([keyHash])
+  @@index([keyPrefix])
+  @@index([isActive])
+  @@map("api_keys")
+}
+
+model ApiKeyUsage {
+  id             String   @id @default(uuid()) @db.Uuid
+  apiKeyId       String   @map("api_key_id") @db.Uuid
+  endpoint       String   @db.VarChar(255)
+  method         String   @db.VarChar(10)
+  statusCode     Int?     @map("status_code")
+  responseTimeMs Int?     @map("response_time_ms")
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId])
+  @@index([createdAt(sort: Desc)])
+  @@map("api_key_usage")
+}
+
+model DomainLookup {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  domain            String    @unique @db.VarChar(255)
+  isSubdomain       Boolean   @default(false) @map("is_subdomain")
+  isVerified        Boolean   @default(false) @map("is_verified")
+  verificationToken String?   @map("verification_token") @db.VarChar(255)
+  dnsConfigured     Boolean   @default(false) @map("dns_configured")
+  sslEnabled        Boolean   @default(false) @map("ssl_enabled")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  verifiedAt        DateTime? @map("verified_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([domain])
+  @@index([isVerified])
+  @@map("domain_lookups")
+}

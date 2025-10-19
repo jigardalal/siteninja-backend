@@ -1,0 +1,1546 @@
+{
+  "info": {
+    "name": "SiteNinja Backend API",
+    "description": "Complete API collection for SiteNinja multi-tenant website builder backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "siteninja-backend-api",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "page_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "section_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "asset_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "template_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "webhook_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "api_key_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Check API health and database connectivity"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', response.data.id);",
+                  "    pm.collectionVariables.set('tenant_id', response.data.tenantId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"tenantId\": \"{{tenant_id}}\",\n  \"role\": \"editor\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login (NextAuth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/callback/credentials",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "callback", "credentials"]
+            },
+            "description": "Login with credentials (NextAuth)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants?page=1&limit=20&sort=createdAt&order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "businessType",
+                  "value": "restaurant",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "ninja",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all tenants with pagination and filtering"
+          }
+        },
+        {
+          "name": "Create Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tenant_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Restaurant\",\n  \"businessName\": \"Test Restaurant Inc.\",\n  \"subdomain\": \"testrestaurant\",\n  \"businessType\": \"restaurant\",\n  \"description\": \"A test restaurant\",\n  \"contactEmail\": \"contact@testrestaurant.com\",\n  \"contactPhone\": \"+1234567890\",\n  \"status\": \"trial\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants"]
+            },
+            "description": "Create a new tenant (super_admin only)"
+          }
+        },
+        {
+          "name": "Get Tenant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}"]
+            },
+            "description": "Get a single tenant by ID"
+          }
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Restaurant Name\",\n  \"description\": \"Updated description\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}"]
+            },
+            "description": "Update a tenant (admin/owner only)"
+          }
+        },
+        {
+          "name": "Delete Tenant (Soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}"]
+            },
+            "description": "Soft delete a tenant (super_admin only)"
+          }
+        },
+        {
+          "name": "Delete Tenant (Hard)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}?hard=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}"],
+              "query": [
+                {
+                  "key": "hard",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Permanently delete a tenant (super_admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users?page=1&limit=20&sort=createdAt&order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                },
+                {
+                  "key": "tenantId",
+                  "value": "{{tenant_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "editor",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "john",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all users with pagination and filtering"
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"tenantId\": \"{{tenant_id}}\",\n  \"role\": \"editor\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Create a new user (admin only)"
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Get a single user by ID"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Update a user"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Delete a user (admin only)"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "password"]
+            },
+            "description": "Change user password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pages",
+      "item": [
+        {
+          "name": "List Pages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "published",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "home",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all pages for a tenant"
+          }
+        },
+        {
+          "name": "Create Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('page_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Home Page\",\n  \"slug\": \"home\",\n  \"content\": \"<h1>Welcome to our website</h1>\",\n  \"status\": \"published\",\n  \"isHomepage\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages"]
+            },
+            "description": "Create a new page"
+          }
+        },
+        {
+          "name": "Get Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}"]
+            },
+            "description": "Get a single page by ID"
+          }
+        },
+        {
+          "name": "Get Page by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/slug/home",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "slug", "home"]
+            },
+            "description": "Get a page by slug"
+          }
+        },
+        {
+          "name": "Update Page",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Home Page\",\n  \"content\": \"<h1>Updated content</h1>\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}"]
+            },
+            "description": "Update a page"
+          }
+        },
+        {
+          "name": "Delete Page",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}"]
+            },
+            "description": "Delete a page"
+          }
+        },
+        {
+          "name": "Duplicate Page",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Copy of Home Page\",\n  \"slug\": \"home-copy\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "duplicate"]
+            },
+            "description": "Duplicate a page with all sections"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sections",
+      "item": [
+        {
+          "name": "List Sections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/sections",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "sections"]
+            },
+            "description": "List all sections for a page"
+          }
+        },
+        {
+          "name": "Create Section",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('section_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"hero\",\n  \"name\": \"Hero Section\",\n  \"content\": {\n    \"heading\": \"Welcome\",\n    \"subheading\": \"To our amazing site\",\n    \"backgroundImage\": \"/images/hero.jpg\"\n  },\n  \"order\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/sections",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "sections"]
+            },
+            "description": "Create a new section"
+          }
+        },
+        {
+          "name": "Update Section",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Hero\",\n  \"content\": {\n    \"heading\": \"Updated Welcome\",\n    \"subheading\": \"New tagline\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/sections/{{section_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "sections", "{{section_id}}"]
+            },
+            "description": "Update a section"
+          }
+        },
+        {
+          "name": "Delete Section",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/sections/{{section_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "sections", "{{section_id}}"]
+            },
+            "description": "Delete a section"
+          }
+        },
+        {
+          "name": "Reorder Sections",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionIds\": [\n    \"section-id-1\",\n    \"section-id-2\",\n    \"section-id-3\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/sections/reorder",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "sections", "reorder"]
+            },
+            "description": "Reorder sections on a page"
+          }
+        },
+        {
+          "name": "Bulk Create Sections",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sections\": [\n    {\n      \"type\": \"hero\",\n      \"name\": \"Hero\",\n      \"content\": {\"heading\": \"Welcome\"},\n      \"order\": 0\n    },\n    {\n      \"type\": \"features\",\n      \"name\": \"Features\",\n      \"content\": {\"items\": []},\n      \"order\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/sections/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "sections", "bulk"]
+            },
+            "description": "Create multiple sections at once"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SEO",
+      "item": [
+        {
+          "name": "Get Page SEO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/seo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "seo"]
+            },
+            "description": "Get SEO metadata for a page"
+          }
+        },
+        {
+          "name": "Update Page SEO",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metaTitle\": \"Home - Best Restaurant\",\n  \"metaDescription\": \"Welcome to the best restaurant in town\",\n  \"metaKeywords\": [\"restaurant\", \"food\", \"dining\"],\n  \"ogTitle\": \"Best Restaurant\",\n  \"ogDescription\": \"Amazing food experience\",\n  \"ogImage\": \"/images/og-image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/pages/{{page_id}}/seo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "pages", "{{page_id}}", "seo"]
+            },
+            "description": "Update SEO metadata for a page"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Navigation",
+      "item": [
+        {
+          "name": "List Navigation Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/navigation",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "navigation"]
+            },
+            "description": "List all navigation items for a tenant"
+          }
+        },
+        {
+          "name": "Create Navigation Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"url\": \"/\",\n  \"order\": 0,\n  \"isVisible\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/navigation",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "navigation"]
+            },
+            "description": "Create a new navigation item"
+          }
+        },
+        {
+          "name": "Update Navigation Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"About Us\",\n  \"url\": \"/about\",\n  \"isVisible\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/navigation/:navId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "navigation", ":navId"]
+            },
+            "description": "Update a navigation item"
+          }
+        },
+        {
+          "name": "Delete Navigation Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/navigation/:navId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "navigation", ":navId"]
+            },
+            "description": "Delete a navigation item"
+          }
+        },
+        {
+          "name": "Reorder Navigation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemIds\": [\n    \"nav-id-1\",\n    \"nav-id-2\",\n    \"nav-id-3\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/navigation/reorder",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "navigation", "reorder"]
+            },
+            "description": "Reorder navigation items"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Branding",
+      "item": [
+        {
+          "name": "Get Branding",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/branding",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "branding"]
+            },
+            "description": "Get branding settings for a tenant"
+          }
+        },
+        {
+          "name": "Update Branding",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"primaryColor\": \"#FF6B6B\",\n  \"secondaryColor\": \"#4ECDC4\",\n  \"accentColor\": \"#FFE66D\",\n  \"backgroundColor\": \"#FFFFFF\",\n  \"textColor\": \"#2C3E50\",\n  \"fontFamily\": \"Inter, sans-serif\",\n  \"headingFont\": \"Montserrat, sans-serif\",\n  \"logo\": \"/uploads/logo.png\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/branding",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "branding"]
+            },
+            "description": "Update branding settings"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "item": [
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "subscription"]
+            },
+            "description": "Get subscription details for a tenant"
+          }
+        },
+        {
+          "name": "Update Subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"pro\",\n  \"status\": \"active\",\n  \"startDate\": \"2025-01-01T00:00:00Z\",\n  \"endDate\": \"2025-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "subscription"]
+            },
+            "description": "Update subscription details"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assets",
+      "item": [
+        {
+          "name": "List Assets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/assets?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "assets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "category",
+                  "value": "images",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "logo",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all assets for a tenant"
+          }
+        },
+        {
+          "name": "Upload Asset",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "altText",
+                  "value": "Company Logo",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "logos",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/assets/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "assets", "upload"]
+            },
+            "description": "Upload a new asset (image or document)"
+          }
+        },
+        {
+          "name": "Get Asset",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/assets/{{asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "assets", "{{asset_id}}"]
+            },
+            "description": "Get a single asset by ID"
+          }
+        },
+        {
+          "name": "Update Asset",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"altText\": \"Updated Alt Text\",\n  \"category\": \"branding\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/assets/{{asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "assets", "{{asset_id}}"]
+            },
+            "description": "Update asset metadata"
+          }
+        },
+        {
+          "name": "Delete Asset",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/assets/{{asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "assets", "{{asset_id}}"]
+            },
+            "description": "Delete an asset"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/templates?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "templates"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "category",
+                  "value": "restaurant",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "modern",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all templates"
+          }
+        },
+        {
+          "name": "Create Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('template_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Modern Restaurant\",\n  \"description\": \"A modern template for restaurants\",\n  \"category\": \"restaurant\",\n  \"previewImage\": \"/templates/modern-restaurant.jpg\",\n  \"isActive\": true,\n  \"defaultSections\": [\n    {\"type\": \"hero\", \"name\": \"Hero\", \"content\": {}},\n    {\"type\": \"menu\", \"name\": \"Menu\", \"content\": {}}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "templates"]
+            },
+            "description": "Create a new template (super_admin only)"
+          }
+        },
+        {
+          "name": "Get Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "templates", "{{template_id}}"]
+            },
+            "description": "Get a single template by ID"
+          }
+        },
+        {
+          "name": "Update Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Template Name\",\n  \"description\": \"Updated description\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "templates", "{{template_id}}"]
+            },
+            "description": "Update a template (super_admin only)"
+          }
+        },
+        {
+          "name": "Delete Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/templates/{{template_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "templates", "{{template_id}}"]
+            },
+            "description": "Delete a template (super_admin only)"
+          }
+        },
+        {
+          "name": "Apply Template to Page",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pageId\": \"{{page_id}}\",\n  \"customizations\": {\n    \"primaryColor\": \"#FF6B6B\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/templates/{{template_id}}/apply",
+              "host": ["{{base_url}}"],
+              "path": ["api", "templates", "{{template_id}}", "apply"]
+            },
+            "description": "Apply a template to a page"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "List Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/webhooks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "webhooks"]
+            },
+            "description": "List all webhooks for a tenant"
+          }
+        },
+        {
+          "name": "Create Webhook",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('webhook_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/webhooks/siteninja\",\n  \"events\": [\"page.published\", \"page.unpublished\"],\n  \"secret\": \"your-webhook-secret-key\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/webhooks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "webhooks"]
+            },
+            "description": "Create a new webhook"
+          }
+        },
+        {
+          "name": "Update Webhook",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/webhooks/updated\",\n  \"events\": [\"page.published\"],\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/webhooks/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "webhooks", "{{webhook_id}}"]
+            },
+            "description": "Update a webhook"
+          }
+        },
+        {
+          "name": "Delete Webhook",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/webhooks/{{webhook_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "webhooks", "{{webhook_id}}"]
+            },
+            "description": "Delete a webhook"
+          }
+        },
+        {
+          "name": "Test Webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/webhooks/{{webhook_id}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "webhooks", "{{webhook_id}}", "test"]
+            },
+            "description": "Send a test payload to a webhook"
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Keys",
+      "item": [
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "api-keys"]
+            },
+            "description": "List all API keys for a tenant"
+          }
+        },
+        {
+          "name": "Create API Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('api_key_id', response.data.id);",
+                  "    // Save the raw key - it's only shown once!",
+                  "    console.log('API Key:', response.data.key);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Production API Key\",\n  \"permissions\": [\n    \"pages:read\",\n    \"pages:write\",\n    \"sections:read\",\n    \"sections:write\"\n  ],\n  \"expiresAt\": \"2026-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "api-keys"]
+            },
+            "description": "Create a new API key (admin only)"
+          }
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/api-keys/{{api_key_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "api-keys", "{{api_key_id}}"]
+            },
+            "description": "Revoke an API key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "List Tenant Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/audit?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tenants", "{{tenant_id}}", "audit"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "action",
+                  "value": "create",
+                  "disabled": true
+                },
+                {
+                  "key": "resource",
+                  "value": "page",
+                  "disabled": true
+                },
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get audit logs for a specific tenant"
+          }
+        },
+        {
+          "name": "List All Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/audit?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "action",
+                  "value": "delete",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all audit logs (super_admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Features",
+      "item": [
+        {
+          "name": "Optimize Content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is some content that needs optimization.\",\n  \"tone\": \"professional\",\n  \"targetAudience\": \"business professionals\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/content-optimize",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "content-optimize"]
+            },
+            "description": "Optimize content with AI"
+          }
+        },
+        {
+          "name": "SEO Optimize",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Page content to optimize for SEO\",\n  \"keywords\": [\"restaurant\", \"food\", \"dining\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/seo-optimize",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "seo-optimize"]
+            },
+            "description": "Generate SEO optimizations"
+          }
+        },
+        {
+          "name": "Generate Page",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pageType\": \"about\",\n  \"businessType\": \"restaurant\",\n  \"businessName\": \"Bella Italia\",\n  \"description\": \"Italian restaurant specializing in pasta\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/generate-page",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "generate-page"]
+            },
+            "description": "Generate a complete page with AI"
+          }
+        }
+      ]
+    }
+  ]
+}

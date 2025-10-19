@@ -1,0 +1,807 @@
+openapi: 3.0.3
+info:
+  title: SiteNinja Backend API
+  description: |
+    Multi-tenant website builder backend built with Next.js 15, TypeScript, Prisma, and PostgreSQL.
+
+    ## Authentication
+
+    This API uses two authentication methods:
+
+    1. **JWT Bearer Token** (Primary)
+       - Include in header: `Authorization: Bearer <token>`
+       - Get token from `/api/auth/callback/credentials` endpoint
+
+    2. **API Key** (Server-to-server)
+       - Include in header: `X-API-Key: <api_key>`
+       - Create keys via `/api/tenants/{tenantId}/api-keys`
+
+    ## Rate Limiting
+
+    - Anonymous: 100 requests/hour
+    - Authenticated: 1,000 requests/hour
+    - API Keys: 5,000 requests/hour
+
+    ## Test Credentials
+
+    After running `npm run db:seed`, you can use:
+    - Super Admin: `admin@siteninja.com` / `Password123!`
+    - Restaurant Owner: `marco@bellaitalia.com` / `Password123!`
+    - Tech Owner: `sarah@techflow.io` / `Password123!`
+
+  version: 2.0.0
+  contact:
+    name: SiteNinja Support
+    email: support@siteninja.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.siteninja.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: API health check
+  - name: Authentication
+    description: User authentication and registration
+  - name: Tenants
+    description: Multi-tenant management
+  - name: Users
+    description: User management
+  - name: Pages
+    description: Page management
+  - name: Sections
+    description: Page section management
+  - name: SEO
+    description: SEO metadata management
+  - name: Navigation
+    description: Navigation menu management
+  - name: Branding
+    description: Branding and visual identity
+  - name: Subscriptions
+    description: Subscription management
+  - name: Assets
+    description: File and asset management
+  - name: Templates
+    description: Page template management
+  - name: Webhooks
+    description: Webhook configuration
+  - name: API Keys
+    description: API key management
+  - name: Audit Logs
+    description: Activity audit logs
+  - name: AI Features
+    description: AI-powered content features
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Health
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Check API health and database connectivity
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  # Authentication
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      description: Create a new user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '409':
+          description: Email already exists
+        '422':
+          description: Validation error
+
+  /api/auth/callback/credentials:
+    post:
+      tags: [Authentication]
+      summary: Login with credentials
+      description: Authenticate user and get JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  # Tenants
+  /api/tenants:
+    get:
+      tags: [Tenants]
+      summary: List all tenants
+      description: Get paginated list of tenants (admin/super_admin only)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended, trial]
+        - name: businessType
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantListResponse'
+
+    post:
+      tags: [Tenants]
+      summary: Create tenant
+      description: Create a new tenant (super_admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantRequest'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+  /api/tenants/{tenantId}:
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Tenants]
+      summary: Get tenant
+      description: Get tenant details by ID
+      responses:
+        '200':
+          description: Tenant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+    put:
+      tags: [Tenants]
+      summary: Update tenant
+      description: Update tenant details (admin/owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTenantRequest'
+      responses:
+        '200':
+          description: Tenant updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+    delete:
+      tags: [Tenants]
+      summary: Delete tenant
+      description: Delete tenant (super_admin only)
+      parameters:
+        - name: hard
+          in: query
+          description: Permanent deletion if true
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Tenant deleted
+
+  # Pages
+  /api/tenants/{tenantId}/pages:
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Pages]
+      summary: List pages
+      description: Get all pages for a tenant
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: List of pages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageListResponse'
+
+    post:
+      tags: [Pages]
+      summary: Create page
+      description: Create a new page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePageRequest'
+      responses:
+        '201':
+          description: Page created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageResponse'
+
+  /api/tenants/{tenantId}/pages/{pageId}:
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Pages]
+      summary: Get page
+      responses:
+        '200':
+          description: Page details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageResponse'
+
+    put:
+      tags: [Pages]
+      summary: Update page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePageRequest'
+      responses:
+        '200':
+          description: Page updated
+
+    delete:
+      tags: [Pages]
+      summary: Delete page
+      responses:
+        '204':
+          description: Page deleted
+
+  # Branding
+  /api/tenants/{tenantId}/branding:
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Branding]
+      summary: Get branding
+      description: Get branding settings for a tenant
+      responses:
+        '200':
+          description: Branding details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandingResponse'
+
+    put:
+      tags: [Branding]
+      summary: Update branding
+      description: Update branding settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBrandingRequest'
+      responses:
+        '200':
+          description: Branding updated
+
+  # Templates
+  /api/templates:
+    get:
+      tags: [Templates]
+      summary: List templates
+      description: Get all available templates
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateListResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from login endpoint
+
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for server-to-server authentication
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      description: Items per page
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+    SortParam:
+      name: sort
+      in: query
+      description: Sort field
+      schema:
+        type: string
+        default: createdAt
+
+    OrderParam:
+      name: order
+      in: query
+      description: Sort order
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+
+  schemas:
+    # Common
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: healthy
+            database:
+              type: string
+              example: connected
+            timestamp:
+              type: string
+              format: date-time
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        message:
+          type: string
+        meta:
+          type: object
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    # Auth
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - tenantId
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tenantId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [viewer, editor, admin, owner]
+          default: editor
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        tenantId:
+          type: string
+        emailVerified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/User'
+
+    # Tenant
+    CreateTenantRequest:
+      type: object
+      required:
+        - name
+        - businessName
+      properties:
+        name:
+          type: string
+          description: Display name
+        businessName:
+          type: string
+          description: Legal business name
+        subdomain:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        customDomain:
+          type: string
+        businessType:
+          type: string
+        description:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended, trial]
+
+    UpdateTenantRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        status:
+          type: string
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        name:
+          type: string
+        subdomain:
+          type: string
+        businessName:
+          type: string
+        businessType:
+          type: string
+        status:
+          type: string
+        branding:
+          $ref: '#/components/schemas/Branding'
+        createdAt:
+          type: string
+          format: date-time
+
+    TenantResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Tenant'
+
+    TenantListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tenant'
+            pagination:
+              $ref: '#/components/schemas/PaginationMeta'
+
+    # Page
+    CreatePageRequest:
+      type: object
+      required:
+        - title
+        - slug
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        status:
+          type: string
+          enum: [draft, published]
+          default: draft
+
+    UpdatePageRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+
+    Page:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        title:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+        createdAt:
+          type: string
+          format: date-time
+
+    PageResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Page'
+
+    PageListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Page'
+
+    # Section
+    Section:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pageId:
+          type: string
+        sectionId:
+          type: string
+        type:
+          type: string
+          enum: [hero, features, gallery, menu, contact, cta]
+        content:
+          type: object
+        sortOrder:
+          type: integer
+
+    # Branding
+    UpdateBrandingRequest:
+      type: object
+      properties:
+        primaryColor:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        textColor:
+          type: string
+        fontFamily:
+          type: string
+        headingFontFamily:
+          type: string
+        logoUrl:
+          type: string
+
+    Branding:
+      type: object
+      properties:
+        id:
+          type: string
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        fontFamily:
+          type: string
+        logoUrl:
+          type: string
+
+    BrandingResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Branding'
+
+    # Template
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        previewImage:
+          type: string
+        isActive:
+          type: boolean
+
+    TemplateListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Template'
