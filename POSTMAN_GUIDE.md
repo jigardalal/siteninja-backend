@@ -15,7 +15,7 @@ The collection uses variables for easy testing. Set these in the collection vari
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `base_url` | API base URL | `http://localhost:3000` |
+| `base_url` | API base URL | `http://localhost:3021` |
 | `jwt_token` | JWT authentication token | (set after login) |
 | `tenant_id` | Current tenant ID | (auto-set after creating tenant) |
 | `user_id` | Current user ID | (auto-set after creating user) |
@@ -268,7 +268,7 @@ Many requests have test scripts that automatically set variables. For example, c
 
 ### 2. Environment Variables
 Create separate environments for:
-- Local Development (`http://localhost:3000`)
+- Local Development (`http://localhost:3021`)
 - Staging (`https://staging-api.siteninja.com`)
 - Production (`https://api.siteninja.com`)
 

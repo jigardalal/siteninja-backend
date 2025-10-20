@@ -411,7 +411,7 @@ export const GET = withSecurity(async (request) => {
 
 ```bash
 # Test webhook creation
-curl -X POST http://localhost:3000/api/tenants/{tenantId}/webhooks \
+curl -X POST http://localhost:3021/api/tenants/{tenantId}/webhooks \
   -H "Authorization: Bearer {jwt}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -420,7 +420,7 @@ curl -X POST http://localhost:3000/api/tenants/{tenantId}/webhooks \
   }'
 
 # Test API key creation
-curl -X POST http://localhost:3000/api/tenants/{tenantId}/api-keys \
+curl -X POST http://localhost:3021/api/tenants/{tenantId}/api-keys \
   -H "Authorization: Bearer {jwt}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -430,11 +430,11 @@ curl -X POST http://localhost:3000/api/tenants/{tenantId}/api-keys \
   }'
 
 # Test with API key
-curl -X GET http://localhost:3000/api/tenants/{tenantId}/pages \
+curl -X GET http://localhost:3021/api/tenants/{tenantId}/pages \
   -H "X-API-Key: sn_test_..."
 
 # Query audit logs
-curl -X GET http://localhost:3000/api/tenants/{tenantId}/audit?resourceType=page
+curl -X GET http://localhost:3021/api/tenants/{tenantId}/audit?resourceType=page
 ```
 
 ---

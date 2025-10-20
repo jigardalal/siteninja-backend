@@ -78,14 +78,14 @@ All 18 production tables are ready:
 ## 🚀 Server Running
 
 Your development server is running at:
-- **URL:** http://localhost:3000
-- **API Health:** http://localhost:3000/api/health
+- **URL:** http://localhost:3021
+- **API Health:** http://localhost:3021/api/health
 
 ## ✅ Verification Tests
 
 ### 1. Health Check (Passed)
 ```bash
-curl http://localhost:3000/api/health | jq .
+curl http://localhost:3021/api/health | jq .
 ```
 
 Result: ✅ API and database connected successfully
@@ -159,7 +159,7 @@ npm run prisma:generate        # Regenerate Prisma Client
 npm run prisma:migrate         # Run migrations
 
 # Testing
-curl http://localhost:3000/api/health | jq .
+curl http://localhost:3021/api/health | jq .
 docker exec postgres psql -U siteninja -d siteninja -c "\dt"
 ```
 
@@ -206,11 +206,11 @@ All configuration is complete:
 
 To start developing:
 
-1. **Server is already running** at http://localhost:3000
+1. **Server is already running** at http://localhost:3021
 
 2. **Test the API:**
    ```bash
-   curl http://localhost:3000/api/health | jq .
+   curl http://localhost:3021/api/health | jq .
    ```
 
 3. **View the database:**

@@ -352,7 +352,7 @@ Before proceeding with remaining phases, test the implemented services:
 #### Validation Testing
 ```bash
 # Test Zod schemas
-curl -X POST http://localhost:3000/api/webhooks \
+curl -X POST http://localhost:3021/api/webhooks \
   -H "Content-Type: application/json" \
   -d '{"url": "invalid-url", "events": []}'
 # Should return 422 with validation errors
@@ -361,7 +361,7 @@ curl -X POST http://localhost:3000/api/webhooks \
 #### Error Handling Testing
 ```bash
 # Test Prisma error handling
-curl -X POST http://localhost:3000/api/tenants \
+curl -X POST http://localhost:3021/api/tenants \
   -H "Content-Type: application/json" \
   -d '{"subdomain": "existing-subdomain"}'
 # Should return 409 conflict error

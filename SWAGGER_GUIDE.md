@@ -8,7 +8,7 @@ SiteNinja Backend now includes interactive API documentation powered by Swagger 
 
 ### Local Development
 ```
-http://localhost:3000/api-docs
+http://localhost:3021/api-docs
 ```
 
 ### Production
@@ -19,7 +19,7 @@ https://api.siteninja.com/api-docs
 ### Landing Page
 Visit the root URL to see quick links to documentation:
 ```
-http://localhost:3000
+http://localhost:3021
 ```
 
 ## Getting Started with Swagger UI
@@ -128,7 +128,7 @@ Navigate to `/api-docs` in your browser. You'll see the Swagger UI interface wit
 
 #### JSON Format
 ```
-http://localhost:3000/api/openapi
+http://localhost:3021/api/openapi
 ```
 
 #### YAML Source
@@ -144,7 +144,7 @@ npm install @openapitools/openapi-generator-cli -g
 
 # Generate TypeScript client
 openapi-generator-cli generate \
-  -i http://localhost:3000/api/openapi \
+  -i http://localhost:3021/api/openapi \
   -g typescript-axios \
   -o ./generated-client
 ```
@@ -154,7 +154,7 @@ Import the OpenAPI spec directly into Postman:
 1. Open Postman
 2. Click "Import"
 3. Choose "Link"
-4. Enter: `http://localhost:3000/api/openapi`
+4. Enter: `http://localhost:3021/api/openapi`
 5. Click "Continue"
 
 #### With Other Tools
@@ -309,7 +309,7 @@ Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 Save the OpenAPI specification locally:
 ```bash
-curl http://localhost:3000/api/openapi -o openapi.json
+curl http://localhost:3021/api/openapi -o openapi.json
 ```
 
 ### Versioning
@@ -327,7 +327,7 @@ Check the version in Swagger UI at the top of the page.
 If using a custom domain, update the servers in `openapi.yaml`:
 ```yaml
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:3021
     description: Local development
   - url: https://api.siteninja.com
     description: Production
@@ -358,10 +358,10 @@ The API supports two authentication methods:
 - `SEEDED_DATA_SUMMARY.md` - Available test data
 
 ### API Endpoints
-- Landing Page: `http://localhost:3000`
-- Swagger UI: `http://localhost:3000/api-docs`
-- OpenAPI Spec: `http://localhost:3000/api/openapi`
-- Health Check: `http://localhost:3000/api/health`
+- Landing Page: `http://localhost:3021`
+- Swagger UI: `http://localhost:3021/api-docs`
+- OpenAPI Spec: `http://localhost:3021/api/openapi`
+- Health Check: `http://localhost:3021/api/health`
 
 ### External Resources
 - [OpenAPI Specification](https://swagger.io/specification/)

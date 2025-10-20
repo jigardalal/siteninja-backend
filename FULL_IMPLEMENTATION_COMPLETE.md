@@ -396,7 +396,7 @@ const result = await uploadFile(file, tenantId, {
 DATABASE_URL="postgresql://user:password@localhost:5432/siteninja"
 
 # NextAuth
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3021"
 NEXTAUTH_SECRET="your-secret-here"
 
 # Upstash Redis (optional - caching & rate limiting)

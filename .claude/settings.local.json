@@ -17,7 +17,8 @@
       "Bash(npm run test:data:*)",
       "Bash(chmod:*)",
       "Bash(./scripts/test-auth.sh:*)",
-      "Bash(npm run db:seed:*)"
+      "Bash(npm run db:seed:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

@@ -104,7 +104,7 @@ The project includes 18 production-ready tables with full relationships:
    DATABASE_URL="postgresql://siteninja:siteninja@localhost:5432/siteninja?schema=public"
 
    # NextAuth
-   NEXTAUTH_URL="http://localhost:3000"
+   NEXTAUTH_URL="http://localhost:3021"
    NEXTAUTH_SECRET="your-secret-key-min-32-chars-change-in-production"
 
    # Upstash Redis (Required for caching & rate limiting)
@@ -150,13 +150,13 @@ The project includes 18 production-ready tables with full relationships:
    npm run dev
    ```
 
-   Server runs at: **http://localhost:3000**
+   Server runs at: **http://localhost:3021**
 
 ### Verify Installation
 
 ```bash
 # Health check
-curl http://localhost:3000/api/health
+curl http://localhost:3021/api/health
 
 # Should return:
 # {
@@ -488,7 +488,7 @@ Siteninja-backend/
 
 ```bash
 # Development
-npm run dev                    # Start dev server (localhost:3000)
+npm run dev                    # Start dev server (localhost:3021)
 npm run build                  # Build for production
 npm run start                  # Start production server
 
@@ -591,7 +591,7 @@ DATABASE_URL="postgresql://siteninja:siteninja@localhost:5432/siteninja?schema=p
 # =================================
 # NextAuth Configuration
 # =================================
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3021"
 NEXTAUTH_SECRET="your-secret-key-at-least-32-characters-long-change-in-production"
 
 # =================================
