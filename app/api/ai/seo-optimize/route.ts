@@ -1,27 +1,26 @@
-import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, validationErrorResponse } from '@/utils/apiResponse';
+import { NextRequest, NextResponse } from 'next/server';
+import { successResponse, validationErrorResponse, handleApiError } from '@/utils/apiResponse';
 import { z } from 'zod';
+import { requireTenantAccess } from '@/middleware/auth';
+import { aiService, EnhanceSEOOptions } from '@/services/ai.service';
+import { logCreate } from '@/services/audit.service';
+
+interface AuthResult {
+  id: string;
+}
 
 /**
  * POST /api/ai/seo-optimize
  *
  * Generate SEO-optimized metadata using AI
- *
- * PLACEHOLDER IMPLEMENTATION
- * TODO: Integrate with OpenAI/Claude API in Phase 5
- *
- * Request body:
- * - content: Page content to analyze
- * - title: Current page title (optional)
- * - keywords: Target keywords (optional)
- *
- * Response: SEO metadata suggestions (meta title, description, keywords)
  */
 
 const SeoOptimizeSchema = z.object({
   content: z.string().min(1, 'Content is required').max(10000, 'Content too long'),
   title: z.string().max(255).optional(),
+  tenantId: z.string().uuid('Invalid tenant ID'),
   keywords: z.array(z.string()).max(10).optional(),
+  model: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -39,73 +38,84 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { content, title, keywords } = result.data;
+    const { content, title, tenantId, keywords, model } = result.data;
 
-    // PLACEHOLDER: Return mock SEO suggestions
-    // TODO: Call OpenAI/Claude API to generate actual SEO optimizations
-    const contentPreview = content.substring(0, 100);
+    // Verify tenant access
+    const authResult = await requireTenantAccess(request, tenantId);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
-    const mockSuggestions = {
-      metaTitle: {
-        current: title || '',
-        suggestions: [
-          `${contentPreview.split(' ').slice(0, 6).join(' ')} | Your Business Name`,
-          `Professional ${contentPreview.split(' ').slice(0, 4).join(' ')} Services`,
-          `Best ${contentPreview.split(' ').slice(0, 5).join(' ')} - Get Started Today`,
-        ],
-        score: 0.75,
-      },
-      metaDescription: {
-        suggestions: [
-          `Discover ${contentPreview}. Learn more about our services and how we can help you achieve your goals.`,
-          `${contentPreview} with industry-leading expertise. Contact us today for a consultation.`,
-          `Expert ${contentPreview.substring(0, 80)}. Trusted by thousands of customers worldwide.`,
-        ],
-        score: 0.82,
-      },
-      keywords: {
-        current: keywords || [],
-        suggestions: [
-          'professional services',
-          'business solutions',
-          'expert consulting',
-          content.split(' ').slice(0, 3).join(' '),
-          content.split(' ').slice(3, 6).join(' '),
-        ],
-        score: 0.70,
-      },
-      improvements: [
-        {
-          aspect: 'Title length',
-          current: title ? title.length : 0,
-          recommended: '50-60 characters',
-          priority: 'high',
-        },
-        {
-          aspect: 'Description length',
-          recommended: '150-160 characters',
-          priority: 'medium',
-        },
-        {
-          aspect: 'Keyword density',
-          recommended: '1-2% for target keywords',
-          priority: 'medium',
-        },
-      ],
+    const options: EnhanceSEOOptions = {
+      targetKeywords: keywords,
     };
 
+    if (model) {
+      options.config = { model };
+    }
+
+    // Call AI service
+    const seoSuggestion = await aiService.enhanceSEO(content, title || '', options);
+
+    // Log the AI usage
+    await logCreate(
+      (authResult as AuthResult).id,
+      tenantId,
+      'ai_seo_optimize',
+      'seo',
+      {
+        contentLength: content.length,
+        model: model || aiService.getDefaultModel(),
+      },
+      request
+    );
+
     const response = {
-      suggestions: mockSuggestions,
+      suggestions: {
+        metaTitle: {
+          current: title || '',
+          suggestions: [seoSuggestion.metaTitle],
+        },
+        metaDescription: {
+          suggestions: [seoSuggestion.metaDescription],
+        },
+        keywords: {
+          current: keywords || [],
+          suggestions: seoSuggestion.keywords,
+        },
+        improvements: seoSuggestion.suggestions.map(suggestion => ({ aspect: 'general', recommended: suggestion, priority: 'medium'})),
+      },
       metadata: {
         contentLength: content.length,
         timestamp: new Date().toISOString(),
-        model: 'placeholder-v1',
+        model: model || aiService.getDefaultModel(),
       },
     };
 
-    return successResponse(response, 'SEO optimization completed successfully (placeholder)');
-  } catch (error: any) {
-    console.error('Error optimizing SEO:', error);
-    return errorResponse('Failed to optimize SEO: ' + error.message);
+    return successResponse(response, 'SEO optimization completed successfully');
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const status = (error as { status: unknown }).status;
+      if (status === 401) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'AI service authentication failed. Please check OPENAI_API_KEY.',
+          },
+          { status: 500 }
+        );
+      }
+      if (status === 429) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'AI service rate limit exceeded. Please try again later.',
+          },
+          { status: 429 }
+        );
+      }
+    }
+
+    return handleApiError(error, request);
   }
 }

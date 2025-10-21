@@ -1,24 +1,22 @@
-import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, validationErrorResponse } from '@/utils/apiResponse';
+import { NextRequest, NextResponse } from 'next/server';
+import { successResponse, validationErrorResponse, handleApiError } from '@/utils/apiResponse';
 import { z } from 'zod';
+import { requireTenantAccess } from '@/middleware/auth';
+import { aiService } from '@/services/ai.service';
+import { logCreate } from '@/services/audit.service';
+
+interface AuthResult {
+  id: string;
+}
 
 /**
  * POST /api/ai/generate-page
  *
  * Generate a complete page structure using AI
- *
- * PLACEHOLDER IMPLEMENTATION
- * TODO: Integrate with OpenAI/Claude API in Phase 5
- *
- * Request body:
- * - businessType: Type of business (e.g., 'restaurant', 'retail', 'services')
- * - pageType: Type of page (e.g., 'home', 'about', 'services', 'contact')
- * - businessInfo: Business information (name, description, etc.)
- *
- * Response: Generated page structure with sections
  */
 
 const GeneratePageSchema = z.object({
+  tenantId: z.string().uuid('Invalid tenant ID'),
   businessType: z.enum(['restaurant', 'retail', 'services', 'healthcare', 'education', 'nonprofit', 'other']),
   pageType: z.enum(['home', 'about', 'services', 'contact', 'blog', 'gallery']),
   businessInfo: z.object({
@@ -26,6 +24,7 @@ const GeneratePageSchema = z.object({
     description: z.string().optional(),
     industry: z.string().optional(),
   }),
+  model: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -43,97 +42,74 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { businessType, pageType, businessInfo } = result.data;
+    const { tenantId, businessType, pageType, businessInfo, model } = result.data;
 
-    // PLACEHOLDER: Return mock page structure
-    // TODO: Call OpenAI/Claude API to generate actual page content
-    const mockSections = [
-      {
-        sectionId: 'hero',
-        type: 'hero',
-        content: {
-          heading: `Welcome to ${businessInfo.name}`,
-          subheading: businessInfo.description || `Your trusted ${businessType} partner`,
-          ctaText: 'Get Started',
-          ctaLink: '/contact',
-          backgroundImage: '/images/hero-placeholder.jpg',
-        },
-        sortOrder: 0,
-      },
-      {
-        sectionId: 'features',
-        type: 'features',
-        content: {
-          heading: 'Why Choose Us',
-          features: [
-            {
-              title: 'Expert Service',
-              description: 'Industry-leading expertise and professionalism',
-              icon: 'star',
-            },
-            {
-              title: 'Customer Focused',
-              description: 'Your satisfaction is our top priority',
-              icon: 'heart',
-            },
-            {
-              title: 'Proven Results',
-              description: 'Track record of successful outcomes',
-              icon: 'check',
-            },
-          ],
-        },
-        sortOrder: 1,
-      },
-      {
-        sectionId: 'about',
-        type: 'text',
-        content: {
-          heading: `About ${businessInfo.name}`,
-          body: `At ${businessInfo.name}, we pride ourselves on delivering exceptional ${businessType} services. With years of experience and a commitment to excellence, we're here to help you succeed.`,
-        },
-        sortOrder: 2,
-      },
-      {
-        sectionId: 'cta',
-        type: 'cta',
-        content: {
-          heading: 'Ready to Get Started?',
-          description: 'Contact us today to learn more about our services',
-          ctaText: 'Contact Us',
-          ctaLink: '/contact',
-        },
-        sortOrder: 3,
-      },
-    ];
+    // Verify tenant access
+    const authResult = await requireTenantAccess(request, tenantId);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
-    const mockPage = {
-      title: `${pageType.charAt(0).toUpperCase() + pageType.slice(1)} - ${businessInfo.name}`,
-      slug: pageType === 'home' ? 'home' : pageType,
-      description: `${businessInfo.name} - ${pageType} page`,
-      status: 'draft',
-      sections: mockSections,
-      seo: {
-        metaTitle: `${businessInfo.name} | ${pageType.charAt(0).toUpperCase() + pageType.slice(1)}`,
-        metaDescription: `${businessInfo.description || `Professional ${businessType} services`} - Visit our ${pageType} page to learn more.`,
-        keywords: `${businessInfo.name}, ${businessType}, ${pageType}, ${businessInfo.industry || ''}`,
+    const prompt = `Generate a JSON structure for a ${pageType} page for a ${businessType} named '${businessInfo.name}'. The business description is '${businessInfo.description}'. The page should have a title, slug, description, and an array of sections. Each section should have a sectionId, type, content (as a JSON object), and sortOrder.`;
+
+    // Call AI service
+    const generatedJson = await aiService.rewriteContent(
+      '',
+      prompt,
+      model ? { model } : {}
+    );
+
+    const generatedPage = JSON.parse(generatedJson);
+
+    // Log the AI usage
+    await logCreate(
+      (authResult as AuthResult).id,
+      tenantId,
+      'ai_generate_page',
+      'page',
+      {
+        pageType,
+        businessType,
+        model: model || aiService.getDefaultModel(),
       },
-    };
+      request
+    );
 
     const response = {
-      page: mockPage,
+      page: generatedPage,
       metadata: {
         businessType,
         pageType,
-        sectionsGenerated: mockSections.length,
+        sectionsGenerated: generatedPage.sections.length,
         timestamp: new Date().toISOString(),
-        model: 'placeholder-v1',
+        model: model || aiService.getDefaultModel(),
       },
     };
 
-    return successResponse(response, 'Page generated successfully (placeholder)');
-  } catch (error: any) {
-    console.error('Error generating page:', error);
-    return errorResponse('Failed to generate page: ' + error.message);
+    return successResponse(response, 'Page generated successfully');
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const status = (error as { status: unknown }).status;
+      if (status === 401) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'AI service authentication failed. Please check OPENAI_API_KEY.',
+          },
+          { status: 500 }
+        );
+      }
+      if (status === 429) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'AI service rate limit exceeded. Please try again later.',
+          },
+          { status: 429 }
+        );
+      }
+    }
+
+    return handleApiError(error, request);
   }
 }

@@ -12,7 +12,7 @@ import { z } from 'zod';
 const EnhancedContentSchema = z.object({
   enhancedText: z.string().describe('The enhanced version of the content'),
   tone: z.enum(['professional', 'casual', 'friendly', 'formal', 'creative']).describe('The detected or applied tone'),
-  improvements: z.array(z.string()).describe('List of improvements made to the content'),
+  improvements: z.array(z.string()).describe('A single, most important improvement made to the content'),
   wordCount: z.number().describe('Word count of the enhanced content'),
 });
 
@@ -130,7 +130,7 @@ ${focus ? `- Additional focus: ${focus}` : ''}
 Provide structured output with:
 1. Enhanced text that improves clarity, engagement, and readability
 2. The tone you applied
-3. List of specific improvements made
+3. A list containing a single, most important improvement made
 4. Word count of enhanced content`;
 
     const completion = await this.openai.beta.chat.completions.parse({
