@@ -21,7 +21,7 @@ export async function PUT(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
     const body = await request.json();
 
     // Verify tenant exists

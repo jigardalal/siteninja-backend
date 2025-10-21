@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: { tenantId: string; pageId: string; sectionId: string } }
 ) {
   try {
-    const { tenantId, pageId, sectionId } = params;
+    const { tenantId, pageId, sectionId } = await params;
 
     // Verify page exists and belongs to tenant
     const page = await prisma.page.findFirst({
@@ -38,7 +38,7 @@ export async function GET(
       },
     });
 
-    if (!section || section.deletedAt) {
+    if (!section) {
       return notFoundResponse('Section');
     }
 
@@ -63,7 +63,7 @@ export async function PUT(
   { params }: { params: { tenantId: string; pageId: string; sectionId: string } }
 ) {
   try {
-    const { tenantId, pageId, sectionId } = params;
+    const { tenantId, pageId, sectionId } = await params;
     const body = await request.json();
 
     // Verify page exists and belongs to tenant
@@ -96,7 +96,7 @@ export async function PUT(
       },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       return notFoundResponse('Section');
     }
 
@@ -133,7 +133,7 @@ export async function DELETE(
   { params }: { params: { tenantId: string; pageId: string; sectionId: string } }
 ) {
   try {
-    const { tenantId, pageId, sectionId } = params;
+    const { tenantId, pageId, sectionId } = await params;
     const { searchParams } = new URL(request.url);
     const hardDelete = searchParams.get('hard') === 'true';
 
@@ -154,20 +154,14 @@ export async function DELETE(
       },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       return notFoundResponse('Section');
     }
 
-    if (hardDelete) {
-      await prisma.section.delete({
-        where: { id: sectionId },
-      });
-    } else {
-      await prisma.section.update({
-        where: { id: sectionId },
-        data: { deletedAt: new Date() },
-      });
-    }
+    // Section model doesn't support soft delete, always hard delete
+    await prisma.section.delete({
+      where: { id: sectionId },
+    });
 
     return new Response(null, { status: 204 });
   } catch (error: any) {

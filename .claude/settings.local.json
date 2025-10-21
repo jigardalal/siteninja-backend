@@ -18,7 +18,11 @@
       "Bash(chmod:*)",
       "Bash(./scripts/test-auth.sh:*)",
       "Bash(npm run db:seed:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(printf:*)",
+      "Bash(node:*)",
+      "Bash(./fix-params.sh)",
+      "Bash(./fix-remaining-issues.sh)"
     ],
     "deny": [],
     "ask": []

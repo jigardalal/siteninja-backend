@@ -22,7 +22,7 @@ export async function GET(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
     const { searchParams } = new URL(request.url);
 
     // Verify tenant exists
@@ -67,7 +67,7 @@ export async function GET(
         take: limit,
         orderBy: buildPrismaOrderBy(sort!, order!),
         include: {
-          uploadedBy: {
+          user: {
             select: {
               id: true,
               email: true,
@@ -103,7 +103,7 @@ export async function POST(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
     const body = await request.json();
 
     // Verify tenant exists
@@ -139,7 +139,7 @@ export async function POST(
         // uploadedById: Will be set from auth context in Phase 4
       },
       include: {
-        uploadedBy: {
+        user: {
           select: {
             id: true,
             email: true,

@@ -28,7 +28,7 @@ export async function POST(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const body = await request.json();
 
     // Validate request body
@@ -128,7 +128,7 @@ export async function POST(
         where: { id: newPage.id },
         include: {
           sections: { orderBy: { sortOrder: 'asc' } },
-          seo: true,
+          seoMetadata: true,
         },
       });
     });

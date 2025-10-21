@@ -26,7 +26,7 @@ export async function GET(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const { searchParams } = new URL(request.url);
 
     // Verify page exists and belongs to tenant
@@ -55,7 +55,6 @@ export async function GET(
     const where: Prisma.SectionWhereInput = {
       pageId,
       ...(type && { type }),
-      deletedAt: null,
     };
 
     // Fetch sections
@@ -87,7 +86,7 @@ export async function POST(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const body = await request.json();
 
     // Verify page exists and belongs to tenant
@@ -117,7 +116,6 @@ export async function POST(
       where: {
         pageId,
         sectionId: data.sectionId,
-        deletedAt: null,
       },
     });
 
@@ -129,7 +127,7 @@ export async function POST(
     let sortOrder = data.sortOrder;
     if (sortOrder === undefined) {
       const maxSortOrder = await prisma.section.aggregate({
-        where: { pageId, deletedAt: null },
+        where: { pageId },
         _max: { sortOrder: true },
       });
       sortOrder = (maxSortOrder._max.sortOrder ?? -1) + 1;

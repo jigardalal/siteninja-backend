@@ -1,13 +1,49 @@
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { unauthorizedResponse, forbiddenResponse } from '@/utils/apiResponse';
+import jwt from 'jsonwebtoken';
 
 /**
  * Authentication Middleware
  *
  * Provides reusable functions for protecting API routes
  * Supports role-based access control and tenant isolation
+ * Supports both NextAuth sessions and Bearer token authentication
  */
+
+/**
+ * Get Token from Request
+ *
+ * Supports two authentication methods:
+ * 1. NextAuth session cookies (for web app)
+ * 2. Bearer token in Authorization header (for API clients like Postman)
+ */
+async function getTokenFromRequest(request: NextRequest) {
+  // Try NextAuth session first
+  const sessionToken = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (sessionToken) {
+    return sessionToken;
+  }
+
+  // Try Bearer token in Authorization header
+  const authHeader = request.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET || 'fallback-secret');
+      return decoded;
+    } catch (error) {
+      console.error('Invalid JWT token:', error);
+      return null;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Require Authentication
@@ -32,10 +68,7 @@ export async function requireAuth(
   request: NextRequest,
   requiredRoles?: string[]
 ) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = await getTokenFromRequest(request);
 
   if (!token) {
     return unauthorizedResponse('Authentication required');
@@ -75,10 +108,7 @@ export async function requireTenantAccess(
   request: NextRequest,
   tenantId: string
 ) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = await getTokenFromRequest(request);
 
   if (!token) {
     return unauthorizedResponse('Authentication required');
@@ -119,10 +149,7 @@ export async function requireRole(
   request: NextRequest,
   role: string
 ) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = await getTokenFromRequest(request);
 
   if (!token) {
     return unauthorizedResponse('Authentication required');
@@ -154,10 +181,7 @@ export async function requireRole(
  * ```
  */
 export async function getCurrentUser(request: NextRequest) {
-  return await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  return await getTokenFromRequest(request);
 }
 
 /**
@@ -169,10 +193,7 @@ export async function getCurrentUser(request: NextRequest) {
  * @returns True if user is admin or super_admin
  */
 export async function isAdmin(request: NextRequest): Promise<boolean> {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = await getTokenFromRequest(request);
 
   if (!token || !token.role) {
     return false;
@@ -190,10 +211,7 @@ export async function isAdmin(request: NextRequest): Promise<boolean> {
  * @returns True if user is super_admin
  */
 export async function isSuperAdmin(request: NextRequest): Promise<boolean> {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = await getTokenFromRequest(request);
 
   return token?.role === 'super_admin';
 }

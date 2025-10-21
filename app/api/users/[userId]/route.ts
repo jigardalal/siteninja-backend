@@ -30,7 +30,7 @@ export async function GET(
       return authResult;
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     // Check if user is accessing their own profile or is an admin
     if (authResult.id !== userId && authResult.role !== 'super_admin' && authResult.role !== 'admin') {
@@ -53,8 +53,6 @@ export async function GET(
         lastName: true,
         role: true,
         status: true,
-        avatar: true,
-        phone: true,
         tenantId: true,
         lastLogin: true,
         createdAt: true,
@@ -104,7 +102,7 @@ export async function PUT(
       return authResult;
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     // Check if user is updating their own profile or is an admin
     if (authResult.id !== userId && authResult.role !== 'super_admin' && authResult.role !== 'admin' && authResult.role !== 'owner') {
@@ -149,8 +147,6 @@ export async function PUT(
         lastName: true,
         role: true,
         status: true,
-        avatar: true,
-        phone: true,
         tenantId: true,
         lastLogin: true,
         createdAt: true,
@@ -203,7 +199,7 @@ export async function DELETE(
       return authResult;
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     // Prevent users from deleting themselves
     if (authResult.id === userId) {

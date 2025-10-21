@@ -127,8 +127,37 @@
           }
         },
         {
-          "name": "Login (NextAuth)",
+          "name": "Login (Auto from Environment)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    ",
+                  "    // Save JWT token to environment variable",
+                  "    pm.environment.set('jwt_token', response.data.token);",
+                  "    ",
+                  "    // Save user info",
+                  "    pm.environment.set('user_id', response.data.user.id);",
+                  "    pm.environment.set('tenant_id', response.data.user.tenantId);",
+                  "    ",
+                  "    console.log('✅ Login successful!');",
+                  "    console.log('User:', response.data.user.firstName, response.data.user.lastName);",
+                  "    console.log('Role:', response.data.user.role);",
+                  "    console.log('Tenant:', response.data.user.tenant?.name);",
+                  "} else {",
+                  "    console.log('❌ Login failed');",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -138,14 +167,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/auth/callback/credentials",
+              "raw": "{{base_url}}/api/auth/login",
               "host": ["{{base_url}}"],
-              "path": ["api", "auth", "callback", "credentials"]
+              "path": ["api", "auth", "login"]
             },
-            "description": "Login with credentials (NextAuth)"
+            "description": "Login with credentials from environment variables. Auto-saves JWT token, user_id, and tenant_id to environment."
           }
         }
       ]

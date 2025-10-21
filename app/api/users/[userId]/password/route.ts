@@ -31,7 +31,7 @@ export async function PUT(
       return authResult;
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     // Users can only change their own password
     if (authResult.id !== userId) {

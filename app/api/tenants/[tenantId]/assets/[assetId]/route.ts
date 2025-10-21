@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: { tenantId: string; assetId: string } }
 ) {
   try {
-    const { tenantId, assetId } = params;
+    const { tenantId, assetId } = await params;
 
     const asset = await prisma.asset.findFirst({
       where: {
@@ -27,7 +27,7 @@ export async function GET(
         tenantId,
       },
       include: {
-        uploadedBy: {
+        user: {
           select: {
             id: true,
             email: true,
@@ -61,7 +61,7 @@ export async function PUT(
   { params }: { params: { tenantId: string; assetId: string } }
 ) {
   try {
-    const { tenantId, assetId } = params;
+    const { tenantId, assetId } = await params;
     const body = await request.json();
 
     // Validate request body
@@ -97,7 +97,7 @@ export async function PUT(
         updatedAt: new Date(),
       },
       include: {
-        uploadedBy: {
+        user: {
           select: {
             id: true,
             email: true,
@@ -135,7 +135,7 @@ export async function DELETE(
   { params }: { params: { tenantId: string; assetId: string } }
 ) {
   try {
-    const { tenantId, assetId } = params;
+    const { tenantId, assetId } = await params;
 
     // Check if asset exists
     const existing = await prisma.asset.findFirst({

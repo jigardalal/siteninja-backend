@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: { tenantId: string; navId: string } }
 ) {
   try {
-    const { tenantId, navId } = params;
+    const { tenantId, navId } = await params;
 
     const navigation = await prisma.navigation.findFirst({
       where: {
@@ -58,7 +58,7 @@ export async function PUT(
   { params }: { params: { tenantId: string; navId: string } }
 ) {
   try {
-    const { tenantId, navId } = params;
+    const { tenantId, navId } = await params;
     const body = await request.json();
 
     // Validate request body
@@ -128,7 +128,7 @@ export async function DELETE(
   { params }: { params: { tenantId: string; navId: string } }
 ) {
   try {
-    const { tenantId, navId } = params;
+    const { tenantId, navId } = await params;
 
     // Check if navigation exists
     const existing = await prisma.navigation.findFirst({

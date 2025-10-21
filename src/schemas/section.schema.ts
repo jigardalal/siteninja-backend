@@ -19,7 +19,7 @@ const sectionBaseSchema = z.object({
     .min(1, 'Section type is required')
     .max(50, 'Section type must be less than 50 characters')
     .regex(/^[a-zA-Z0-9_-]+$/, 'Section type must contain only letters, numbers, underscores, and hyphens'),
-  content: z.record(z.any(), 'Content must be a valid JSON object'),
+  content: z.any(),
   sortOrder: z.number().int().nonnegative('Sort order must be a non-negative integer').optional(),
 });
 
@@ -50,13 +50,16 @@ export const CreateSectionSchema = sectionBaseSchema;
  * - Cannot update sectionId (use it as identifier)
  * - Cannot update pageId (immutable)
  */
-export const UpdateSectionSchema = sectionBaseSchema
-  .partial()
-  .extend({
-    // Prevent updating immutable fields
-    sectionId: z.undefined().optional(),
-  })
-  .strict();
+export const UpdateSectionSchema = z.object({
+  type: z
+    .string()
+    .min(1, 'Section type is required')
+    .max(50, 'Section type must be less than 50 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Section type must contain only letters, numbers, underscores, and hyphens')
+    .optional(),
+  content: z.any().optional(),
+  sortOrder: z.number().int().nonnegative('Sort order must be a non-negative integer').optional(),
+});
 
 /**
  * Schema for reordering sections
@@ -84,7 +87,7 @@ export const BulkUpdateSectionsSchema = z.object({
       z.object({
         id: z.string().uuid('Invalid section UUID'),
         type: z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/).optional(),
-        content: z.record(z.any()).optional(),
+        content: z.any().optional(),
         sortOrder: z.number().int().nonnegative().optional(),
       })
     )

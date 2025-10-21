@@ -17,8 +17,10 @@ export async function GET(
   { params }: { params: { tenantId: string } }
 ) {
   try {
+    const { tenantId } = await params;
+
     // Authenticate and authorize
-    const auth = await requireTenantAccess(request, params.tenantId);
+    const auth = await requireTenantAccess(request, tenantId);
     if (auth instanceof NextResponse) return auth;
 
     // Validate query parameters
@@ -27,7 +29,7 @@ export async function GET(
 
     // Get tenant
     const tenant = await prisma.tenant.findUnique({
-      where: { tenantId: params.tenantId },
+      where: { id: tenantId },
     });
 
     if (!tenant) {
@@ -59,8 +61,10 @@ export async function POST(
   { params }: { params: { tenantId: string } }
 ) {
   try {
+    const { tenantId } = await params;
+
     // Authenticate and authorize
-    const auth = await requireTenantAccess(request, params.tenantId);
+    const auth = await requireTenantAccess(request, tenantId);
     if (auth instanceof NextResponse) return auth;
 
     // Validate request body
@@ -69,7 +73,7 @@ export async function POST(
 
     // Get tenant
     const tenant = await prisma.tenant.findUnique({
-      where: { tenantId: params.tenantId },
+      where: { id: tenantId },
     });
 
     if (!tenant) {

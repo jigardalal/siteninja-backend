@@ -30,7 +30,7 @@ export async function GET(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
     const { searchParams } = new URL(request.url);
 
     // Verify tenant exists
@@ -110,7 +110,7 @@ export async function POST(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
     const body = await request.json();
 
     // Verify tenant exists

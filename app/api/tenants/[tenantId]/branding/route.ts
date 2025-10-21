@@ -18,7 +18,7 @@ export async function GET(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
 
     // Verify tenant exists
     const tenant = await prisma.tenant.findUnique({
@@ -55,7 +55,7 @@ export async function PUT(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
     const body = await request.json();
 
     // Verify tenant exists
@@ -110,7 +110,7 @@ export async function DELETE(
   { params }: { params: { tenantId: string } }
 ) {
   try {
-    const { tenantId } = params;
+    const { tenantId } = await params;
 
     // Verify tenant exists
     const tenant = await prisma.tenant.findUnique({

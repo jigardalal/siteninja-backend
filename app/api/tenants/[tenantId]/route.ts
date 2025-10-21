@@ -30,13 +30,13 @@ export async function GET(
   { params }: { params: { tenantId: string } }
 ) {
   try {
+    const { tenantId } = await params;
+
     // Require tenant access - users can only access their own tenant
-    const authResult = await requireTenantAccess(request, params.tenantId);
+    const authResult = await requireTenantAccess(request, tenantId);
     if (authResult instanceof NextResponse) {
       return authResult;
     }
-
-    const { tenantId } = params;
 
     // Try cache first
     const cacheKey = `tenant:${tenantId}`;
@@ -89,8 +89,10 @@ export async function PUT(
   { params }: { params: { tenantId: string } }
 ) {
   try {
+    const { tenantId } = await params;
+
     // Require tenant access with admin role
-    const authResult = await requireTenantAccess(request, params.tenantId);
+    const authResult = await requireTenantAccess(request, tenantId);
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -99,8 +101,6 @@ export async function PUT(
     if (!['admin', 'super_admin', 'owner'].includes(authResult.role as string)) {
       return errorResponse('Only admins can update tenant details', 403);
     }
-
-    const { tenantId } = params;
     const body = await request.json();
 
     // Validate request body
@@ -176,8 +176,10 @@ export async function DELETE(
   { params }: { params: { tenantId: string } }
 ) {
   try {
+    const { tenantId } = await params;
+
     // Only super_admins can delete tenants
-    const authResult = await requireTenantAccess(request, params.tenantId);
+    const authResult = await requireTenantAccess(request, tenantId);
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -185,8 +187,6 @@ export async function DELETE(
     if (authResult.role !== 'super_admin') {
       return errorResponse('Only super admins can delete tenants', 403);
     }
-
-    const { tenantId } = params;
     const { searchParams } = new URL(request.url);
     const hardDelete = searchParams.get('hard') === 'true';
 

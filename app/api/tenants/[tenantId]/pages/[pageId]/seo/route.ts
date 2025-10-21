@@ -18,7 +18,7 @@ export async function GET(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
 
     // Verify page exists and belongs to tenant
     const page = await prisma.page.findFirst({
@@ -55,7 +55,7 @@ export async function PUT(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const body = await request.json();
 
     // Verify page exists and belongs to tenant
@@ -110,7 +110,7 @@ export async function DELETE(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
 
     // Verify page exists and belongs to tenant
     const page = await prisma.page.findFirst({

@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: { tenantId: string; slug: string } }
 ) {
   try {
-    const { tenantId, slug } = params;
+    const { tenantId, slug } = await params;
 
     const page = await prisma.page.findFirst({
       where: {
@@ -29,11 +29,10 @@ export async function GET(
       },
       include: {
         sections: {
-          where: { deletedAt: null },
           orderBy: { sortOrder: 'asc' },
         },
-        seo: true,
-        template: true,
+        seoMetadata: true,
+        pageTemplate: { include: { template: true } },
       },
     });
 

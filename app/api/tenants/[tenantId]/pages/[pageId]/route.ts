@@ -22,7 +22,7 @@ export async function GET(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const { searchParams } = new URL(request.url);
 
     // Parse include parameter
@@ -36,9 +36,8 @@ export async function GET(
       },
       include: {
         sections: includeParts.includes('sections') ? { orderBy: { sortOrder: 'asc' } } : false,
-        seo: includeParts.includes('seo'),
-        navigation: includeParts.includes('navigation'),
-        template: includeParts.includes('template'),
+        seoMetadata: includeParts.includes('seo'),
+        pageTemplate: includeParts.includes('template') ? { include: { template: true } } : false,
       },
     });
 
@@ -67,7 +66,7 @@ export async function PUT(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const body = await request.json();
 
     // Validate request body
@@ -104,7 +103,7 @@ export async function PUT(
       },
       include: {
         sections: { orderBy: { sortOrder: 'asc' } },
-        seo: true,
+        seoMetadata: true,
       },
     });
 
@@ -135,7 +134,7 @@ export async function DELETE(
   { params }: { params: { tenantId: string; pageId: string } }
 ) {
   try {
-    const { tenantId, pageId } = params;
+    const { tenantId, pageId } = await params;
     const { searchParams } = new URL(request.url);
     const hardDelete = searchParams.get('hard') === 'true';
 
